@@ -12,31 +12,42 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.userController = void 0;
+exports.bookingController = void 0;
 const http_status_1 = __importDefault(require("http-status"));
 const catchAsync_1 = __importDefault(require("../../utils/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../utils/sendResponse"));
-const user_service_1 = require("./user.service");
-const createUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield user_service_1.userServices.createUserIntoDb(req.body);
-    console.log(result);
+const booking_service_1 = require("./booking.service");
+const createBooking = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { email } = req.user;
+    const result = yield booking_service_1.bookingService.createBookingIntoDb(req.body, email);
     (0, sendResponse_1.default)(res, {
         data: result,
         success: true,
         statusCode: http_status_1.default.OK,
-        message: "User registered successfully",
+        message: "Car booked successfully",
     });
 }));
-const loginUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield user_service_1.userServices.loginUserIntoDb(req.body);
+const getAllBooking = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield booking_service_1.bookingService.getBookingFromDb(req);
     (0, sendResponse_1.default)(res, {
         data: result,
         success: true,
         statusCode: http_status_1.default.OK,
-        message: "User logged in successfully!",
+        message: "Bookings retrieved successfully",
     });
 }));
-exports.userController = {
-    createUser,
-    loginUser,
+const getMyBooking = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const email = req.user.email;
+    const result = yield booking_service_1.bookingService.getMyBookingFromDb(email);
+    (0, sendResponse_1.default)(res, {
+        data: result,
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "My Bookings retrieved successfully",
+    });
+}));
+exports.bookingController = {
+    createBooking,
+    getAllBooking,
+    getMyBooking,
 };

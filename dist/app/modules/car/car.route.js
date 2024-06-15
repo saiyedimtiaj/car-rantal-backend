@@ -1,0 +1,20 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.carRoute = void 0;
+const express_1 = require("express");
+const validateRequest_1 = __importDefault(require("../../middleware/validateRequest"));
+const car_validation_1 = require("./car.validation");
+const car_controller_1 = require("./car.controller");
+const auth_1 = __importDefault(require("../../middleware/auth"));
+const user_constant_1 = require("../user/user.constant");
+const route = (0, express_1.Router)();
+route.post("/", (0, validateRequest_1.default)(car_validation_1.createCarValidationSchema), (0, auth_1.default)(user_constant_1.userRole.admin), car_controller_1.carController.createCar);
+route.patch("/:id", (0, validateRequest_1.default)(car_validation_1.updateCarValidationSchema), (0, auth_1.default)(user_constant_1.userRole.admin), car_controller_1.carController.updateCar);
+route.put("/return", (0, auth_1.default)(user_constant_1.userRole.admin), car_controller_1.carController.returnCar);
+route.delete("/:id", (0, auth_1.default)(user_constant_1.userRole.admin), car_controller_1.carController.deleteCar);
+route.get("/", car_controller_1.carController.getCar);
+route.get("/:id", car_controller_1.carController.getSingleCar);
+exports.carRoute = route;

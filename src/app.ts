@@ -4,17 +4,20 @@ import router from "./app/routes";
 import globalErrorHandeller from "./app/middleware/globalErrorHandeller";
 import noRouteFound from "./app/middleware/noRouteFound";
 const app: Application = express();
+import cookieParser from "cookie-parser";
 
 app.use(express.json());
-app.use("/api", router);
 app.use(
   cors({
     origin: ["http://localhost:5173"],
   })
 );
+app.use(cookieParser());
+
+app.use("/api", router);
 
 app.get("/", (req: Request, res: Response) => {
-  res.send("<h1>Hello World</h1>");
+  res.send("<h1>Hello World by Saiyed Imtiaj</h1>");
 });
 app.use(globalErrorHandeller);
 app.use(noRouteFound);

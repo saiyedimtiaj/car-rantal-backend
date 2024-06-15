@@ -8,13 +8,53 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.userServices = void 0;
+const http_status_1 = __importDefault(require("http-status"));
+const config_1 = __importDefault(require("../../config"));
+const AppError_1 = require("../../error/AppError");
+const user_modal_1 = require("./user.modal");
+const bcrypt_1 = __importDefault(require("bcrypt"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const createUserIntoDb = (payload) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("payload", payload);
-    // const result = await Users.create(payload);
-    // return result;
+    const { password } = payload, userinfo = __rest(payload, ["password"]);
+    const hashedPassword = yield bcrypt_1.default.hash(password, config_1.default.bcrypt_salt_round);
+    const result = yield user_modal_1.Users.create(Object.assign({ password: hashedPassword }, userinfo));
+    return result;
+});
+const loginUserIntoDb = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const isUserExist = yield user_modal_1.Users.findOne({ email: payload.email });
+    if (!isUserExist) {
+        throw new AppError_1.AppError(http_status_1.default.NOT_FOUND, "User does not exist!");
+    }
+    const matchPassword = yield bcrypt_1.default.compare(payload.password, isUserExist.password);
+    if (!matchPassword) {
+        throw new AppError_1.AppError(http_status_1.default.UNAUTHORIZED, "You are not authorize!");
+    }
+    const data = {
+        email: isUserExist.email,
+        role: isUserExist.role,
+    };
+    const token = jsonwebtoken_1.default.sign(data, config_1.default.jwt_access_secret, {
+        expiresIn: config_1.default.jwt_secret_expirein,
+    });
+    return { data: isUserExist, token };
 });
 exports.userServices = {
     createUserIntoDb,
+    loginUserIntoDb,
 };

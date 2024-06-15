@@ -55,13 +55,19 @@ const createBookingIntoDb = async (payload: TCarBooking, userEmail: string) => {
       { status: "unavailable" },
       {
         new: true,
+        session,
       }
     );
-    const result = await Bookings.create({
-      car: carStatusUpdate,
-      ...others,
-      user: user,
-    });
+    const result = await Bookings.create(
+      [
+        {
+          car: carStatusUpdate,
+          ...others,
+          user: user,
+        },
+      ],
+      { session }
+    );
 
     await session.commitTransaction();
     await session.endSession();
@@ -88,7 +94,7 @@ const getBookingFromDb = async (req: Request) => {
 
   const result = await Bookings.find(queryObj).populate("user").populate("car");
 
-  // return result;
+  return result;
 };
 
 const getMyBookingFromDb = async (email: string) => {

@@ -77,7 +77,6 @@ const carReturnFromdb = async (payload: TCarReturn) => {
     const result = await Bookings.findByIdAndUpdate(
       payload.bookingId,
       {
-        car: carStatusChange,
         endTime: payload.endTime,
         totalCost: diff * (bookingCar.pricePerHour as number),
       },
@@ -86,7 +85,9 @@ const carReturnFromdb = async (payload: TCarReturn) => {
         runValidators: true,
         session: session,
       }
-    );
+    )
+      .populate("user")
+      .populate("car");
     await session.commitTransaction();
     await session.endSession();
     return result;

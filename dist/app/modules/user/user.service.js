@@ -37,7 +37,7 @@ const createUserIntoDb = (payload) => __awaiter(void 0, void 0, void 0, function
     return result;
 });
 const loginUserIntoDb = (payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const isUserExist = yield user_modal_1.Users.findOne({ email: payload.email });
+    const isUserExist = yield user_modal_1.Users.findOne({ email: payload.email }).select("+password");
     if (!isUserExist) {
         throw new AppError_1.AppError(http_status_1.default.NOT_FOUND, "User does not exist!");
     }

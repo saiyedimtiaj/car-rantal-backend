@@ -1,7 +1,7 @@
 import { Schema, model } from "mongoose";
 import { TUser } from "./user.interface";
 
-const userModal = new Schema<TUser>(
+const userSchema = new Schema<TUser>(
   {
     name: { type: String, required: true },
     password: { type: String, required: true },
@@ -15,4 +15,11 @@ const userModal = new Schema<TUser>(
   }
 );
 
-export const Users = model<TUser>("Users", userModal);
+userSchema.set("toJSON", {
+  transform: (doc, ret, options) => {
+    delete ret.password;
+    return ret;
+  },
+});
+
+export const Users = model<TUser>("Users", userSchema);

@@ -14,7 +14,9 @@ const createUserIntoDb = async (payload: TUser) => {
 };
 
 const loginUserIntoDb = async (payload: TLogin) => {
-  const isUserExist = await Users.findOne({ email: payload.email });
+  const isUserExist = await Users.findOne({ email: payload.email }).select(
+    "+password"
+  );
   if (!isUserExist) {
     throw new AppError(httpStatus.NOT_FOUND, "User does not exist!");
   }

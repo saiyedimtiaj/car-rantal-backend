@@ -11,43 +11,37 @@ const createBookingIntoDb = async (payload: TCarBooking, userEmail: string) => {
   const { carId, ...others } = payload;
 
   const isCarExist = await Car.findById(carId);
-  if (!isCarExist) {
-    throw new AppError(httpStatus.NOT_FOUND, "Cor does not exist!");
-  }
-
-  if (isCarExist.isDeleted === true) {
-    throw new AppError(httpStatus.NOT_FOUND, "Cor does not exist!");
+  if (!isCarExist || isCarExist.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Car does not exist!");
   }
 
   if (isCarExist.status === "unavailable") {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Car is not abailable on this time!!"
+      "Car is not available at this time!!"
     );
   }
 
-  // const bookingCars = await Bookings.findOne(
-  //   { car: new Types.ObjectId(carId) },
-  //   { sort: { timestamp: 1 } }
-  // );
+  const bookingCars = await Bookings.findOne({
+    car: new Types.ObjectId(carId),
+  }).sort({ createdAt: -1 });
 
-  // const carBookedEndTime = new Date(`1970-01-01T${bookingCars?.endTime}}:00Z`);
-  // const carBookRequestStartTime = new Date(
-  //   `1970-01-01T${payload.startTime}}:00Z`
-  // );
+  if (bookingCars) {
+    const carBookedEndTime = new Date(`1970-01-01T${bookingCars.endTime}:00Z`);
+    const carBookRequestStartTime = new Date(
+      `1970-01-01T${payload.startTime}:00Z`
+    );
 
-  // console.log(carBookRequestStartTime, bookingCars?.endTime);
-  // console.log(carBookedEndTime, payload.startTime);
-
-  // if (
-  //   bookingCars?.date === payload.date &&
-  //   carBookedEndTime < carBookRequestStartTime
-  // ) {
-  //   throw new AppError(
-  //     httpStatus.BAD_REQUEST,
-  //     "Car is not abailable on this time!!"
-  //   );
-  // }
+    if (
+      bookingCars.date === payload.date &&
+      carBookedEndTime >= carBookRequestStartTime
+    ) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Car is not available at this time!!"
+      );
+    }
+  }
 
   const user = await Users.findOne({ email: userEmail });
 
@@ -72,7 +66,7 @@ const createBookingIntoDb = async (payload: TCarBooking, userEmail: string) => {
     await session.commitTransaction();
     await session.endSession();
 
-    // return result;
+    return result;
   } catch (err: any) {
     await session.abortTransaction();
     await session.endSession();

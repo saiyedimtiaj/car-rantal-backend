@@ -25,6 +25,14 @@ const getCar = catchAsync(async (req, res) => {
 
 const getSingleCar = catchAsync(async (req, res) => {
   const result = await carServices.getSingleCarIntoDb(req.params.id);
+  if (!result) {
+    res.status(404).json({
+      success: false,
+      statusCode: 404,
+      message: "No Data Found",
+      data: [],
+    });
+  }
   sendResponse(res, {
     data: result,
     success: true,

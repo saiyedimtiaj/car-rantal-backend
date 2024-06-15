@@ -5,7 +5,7 @@ import { TBooking, TCarBooking, TQuery } from "./booking.interface";
 import { Bookings } from "./booking.model";
 import { AppError } from "../../error/AppError";
 import { Request } from "express";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 const createBookingIntoDb = async (payload: TCarBooking, userEmail: string) => {
   const { carId, ...others } = payload;
@@ -15,14 +15,69 @@ const createBookingIntoDb = async (payload: TCarBooking, userEmail: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "Cor does not exist!");
   }
 
+  if (isCarExist.isDeleted === true) {
+    throw new AppError(httpStatus.NOT_FOUND, "Cor does not exist!");
+  }
+
+  if (isCarExist.status === "unavailable") {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Car is not abailable on this time!!"
+    );
+  }
+
+  // const bookingCars = await Bookings.findOne(
+  //   { car: new Types.ObjectId(carId) },
+  //   { sort: { timestamp: 1 } }
+  // );
+
+  // const carBookedEndTime = new Date(`1970-01-01T${bookingCars?.endTime}}:00Z`);
+  // const carBookRequestStartTime = new Date(
+  //   `1970-01-01T${payload.startTime}}:00Z`
+  // );
+
+  // console.log(carBookRequestStartTime, bookingCars?.endTime);
+  // console.log(carBookedEndTime, payload.startTime);
+
+  // if (
+  //   bookingCars?.date === payload.date &&
+  //   carBookedEndTime < carBookRequestStartTime
+  // ) {
+  //   throw new AppError(
+  //     httpStatus.BAD_REQUEST,
+  //     "Car is not abailable on this time!!"
+  //   );
+  // }
+
   const user = await Users.findOne({ email: userEmail });
 
-  const result = await Bookings.create({
-    car: isCarExist,
-    ...others,
-    user: user,
-  });
-  return result;
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const carStatusUpdate = await Car.findByIdAndUpdate(
+      carId,
+      { status: "unavailable" },
+      {
+        new: true,
+      }
+    );
+    const result = await Bookings.create({
+      car: carStatusUpdate,
+      ...others,
+      user: user,
+    });
+
+    await session.commitTransaction();
+    await session.endSession();
+
+    // return result;
+  } catch (err: any) {
+    await session.abortTransaction();
+    await session.endSession();
+    throw new Error(err);
+  }
 };
 
 const getBookingFromDb = async (req: Request) => {
@@ -39,7 +94,7 @@ const getBookingFromDb = async (req: Request) => {
 
   const result = await Bookings.find(queryObj).populate("user").populate("car");
 
-  return result;
+  // return result;
 };
 
 const getMyBookingFromDb = async (email: string) => {

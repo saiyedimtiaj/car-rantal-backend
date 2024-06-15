@@ -12,7 +12,10 @@ const auth = (requiredRole?: string) => {
   return catchAsync(async (req, res, next) => {
     const token = req.header("Authorization")?.replace("Bearer ", "");
     if (!token) {
-      throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorize!");
+      throw new AppError(
+        httpStatus.UNAUTHORIZED,
+        "You have no access to this route"
+      );
     }
     const decoded = jwt.verify(token, config.jwt_access_secret as string);
     const { role } = decoded as JwtPayload;
@@ -20,7 +23,7 @@ const auth = (requiredRole?: string) => {
     if (requiredRole && requiredRole !== role) {
       throw new AppError(
         httpStatus.UNAUTHORIZED,
-        "You are not get assess on this route"
+        "You have no access to this route"
       );
     }
 

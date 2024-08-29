@@ -9,12 +9,34 @@ const route = Router();
 
 route.post(
   "/",
-  auth(userRole.user),
+  auth(userRole.user, userRole.admin),
   validateRequest(createBookingValidationSchema),
   bookingController.createBooking
 );
 
 route.get("/", auth(userRole.admin), bookingController.getAllBooking);
-route.get("/my-bookings", auth(userRole.user), bookingController.getMyBooking);
+
+route.get(
+  "/my-bookings",
+  auth(userRole.user, userRole.admin),
+  bookingController.getMyBooking
+);
+
+route.patch(
+  "/booking-approve/:id",
+  auth(userRole.admin),
+  bookingController.bookingApprove
+);
+route.patch(
+  "/booking-reject/:id",
+  auth(userRole.user, userRole.admin),
+  bookingController.bookingReject
+);
+
+route.put(
+  "/update/:id",
+  auth(userRole.user, userRole.admin),
+  bookingController.updateBooking
+);
 
 export const bookingRouter = route;

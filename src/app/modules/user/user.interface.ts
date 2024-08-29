@@ -5,6 +5,7 @@ export type TUser = {
   password: string;
   phone: string;
   address: string;
+  image: string;
 };
 
 export type TLogin = {

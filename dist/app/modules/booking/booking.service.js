@@ -59,7 +59,7 @@ const createBookingIntoDb = (payload, userEmail) => __awaiter(void 0, void 0, vo
     if (!isCarExist || isCarExist.isDeleted) {
         throw new AppError_1.AppError(http_status_1.default.NOT_FOUND, "Car does not exist!");
     }
-    if (isCarExist.status === "unavailable") {
+    if (isCarExist.status !== "available") {
         throw new AppError_1.AppError(http_status_1.default.BAD_REQUEST, "Car is not available at this time!!");
     }
     const bookingCars = yield booking_model_1.Bookings.findOne({
@@ -74,47 +74,94 @@ const createBookingIntoDb = (payload, userEmail) => __awaiter(void 0, void 0, vo
         }
     }
     const user = yield user_modal_1.Users.findOne({ email: userEmail });
-    const session = yield mongoose_1.default.startSession();
-    try {
-        session.startTransaction();
-        const carStatusUpdate = yield car_modal_1.Car.findByIdAndUpdate(carId, { status: "unavailable" }, {
-            new: true,
-            session,
-        });
-        const result = yield booking_model_1.Bookings.create([
-            Object.assign(Object.assign({ car: carStatusUpdate }, others), { user: user }),
-        ], { session });
-        yield session.commitTransaction();
-        yield session.endSession();
-        return result;
+    const findBooking = yield booking_model_1.Bookings.findOne({ date: payload.date }).sort({
+        date: -1,
+    });
+    if (payload.date === (findBooking === null || findBooking === void 0 ? void 0 : findBooking.date)) {
+        if ((user === null || user === void 0 ? void 0 : user.email) === userEmail) {
+            throw new AppError_1.AppError(http_status_1.default.BAD_REQUEST, "You already booked at this date!");
+        }
     }
-    catch (err) {
-        yield session.abortTransaction();
-        yield session.endSession();
-        throw new Error(err);
-    }
+    const result = yield booking_model_1.Bookings.create(Object.assign(Object.assign({ car: carId }, others), { user: user }));
+    return result;
 });
 const getBookingFromDb = (req) => __awaiter(void 0, void 0, void 0, function* () {
     const queryObj = {};
     if (req.query.carId) {
-        console.log(req.query.carId);
         queryObj["car"] = new mongoose_1.Types.ObjectId(req.query.carId);
     }
     if (req.query.date) {
         queryObj.date = req.query.date;
     }
-    const result = yield booking_model_1.Bookings.find(queryObj).populate("user").populate("car");
+    const result = yield booking_model_1.Bookings.find(queryObj)
+        .populate("user")
+        .populate("car")
+        .sort({ createdAt: "desc" });
     return result;
 });
 const getMyBookingFromDb = (email) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield user_modal_1.Users.findOne({ email });
     const result = yield booking_model_1.Bookings.find({ user: new mongoose_1.Types.ObjectId(user === null || user === void 0 ? void 0 : user._id) })
         .populate("user")
-        .populate("car");
+        .populate("car")
+        .sort({ createdAt: "desc" });
+    return result;
+});
+const approveBooking = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const session = yield mongoose_1.default.startSession();
+    session.startTransaction();
+    try {
+        const isBookingExist = yield booking_model_1.Bookings.findById(id).session(session);
+        if (!isBookingExist) {
+            throw new AppError_1.AppError(http_status_1.default.NOT_FOUND, "Booking not found!");
+        }
+        if (isBookingExist.status !== "panding") {
+            throw new AppError_1.AppError(http_status_1.default.BAD_REQUEST, "Already Booking changed!");
+        }
+        const isCarExist = yield car_modal_1.Car.findById(isBookingExist.car).session(session);
+        if (!isCarExist) {
+            throw new AppError_1.AppError(http_status_1.default.NOT_FOUND, "Car not found!");
+        }
+        const car = yield car_modal_1.Car.findByIdAndUpdate(isCarExist._id, { status: "unavailable" }, { new: true, session });
+        const bookingUpdate = yield booking_model_1.Bookings.findByIdAndUpdate(id, { status: "approve" }, { new: true, session });
+        yield session.commitTransaction();
+        session.endSession();
+        return { car, bookingUpdate };
+    }
+    catch (error) {
+        yield session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+});
+const rejectBooking = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const isBookingExist = yield booking_model_1.Bookings.findById(id);
+    if (!isBookingExist) {
+        throw new AppError_1.AppError(http_status_1.default.NOT_FOUND, "Booking not found!");
+    }
+    if (isBookingExist.status !== "panding") {
+        throw new AppError_1.AppError(http_status_1.default.BAD_REQUEST, "Already Booking changed!");
+    }
+    const isCarExist = yield car_modal_1.Car.findById(isBookingExist.car);
+    if (!isCarExist) {
+        throw new AppError_1.AppError(http_status_1.default.NOT_FOUND, "Car not found!");
+    }
+    const bookingUpdate = yield booking_model_1.Bookings.findByIdAndUpdate(id, { status: "reject" }, { new: true });
+    return bookingUpdate;
+});
+const updateBooking = (id, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const isBookingExist = yield booking_model_1.Bookings.findById(id);
+    if (!isBookingExist) {
+        throw new AppError_1.AppError(http_status_1.default.NOT_FOUND, "Booking not found!");
+    }
+    const result = yield booking_model_1.Bookings.findByIdAndUpdate(id, payload, { new: true });
     return result;
 });
 exports.bookingService = {
     createBookingIntoDb,
     getBookingFromDb,
     getMyBookingFromDb,
+    approveBooking,
+    rejectBooking,
+    updateBooking,
 };

@@ -46,8 +46,41 @@ const getMyBooking = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
         message: "My Bookings retrieved successfully",
     });
 }));
+const bookingApprove = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = req.params.id;
+    const result = yield booking_service_1.bookingService.approveBooking(id);
+    (0, sendResponse_1.default)(res, {
+        data: result,
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Booking Approve successfully",
+    });
+}));
+const bookingReject = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = req.params.id;
+    const result = yield booking_service_1.bookingService.rejectBooking(id);
+    (0, sendResponse_1.default)(res, {
+        data: result,
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Booking is Rejected",
+    });
+}));
+const updateBooking = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = req.params.id;
+    const result = yield booking_service_1.bookingService.updateBooking(id, req.body);
+    (0, sendResponse_1.default)(res, {
+        data: result,
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Booking date and time modified!",
+    });
+}));
 exports.bookingController = {
     createBooking,
     getAllBooking,
     getMyBooking,
+    bookingApprove,
+    bookingReject,
+    updateBooking,
 };

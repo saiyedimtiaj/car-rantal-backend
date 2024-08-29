@@ -27,7 +27,7 @@ const createCar = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void
     });
 }));
 const getCar = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield car_service_1.carServices.getCarIntoDb();
+    const result = yield car_service_1.carServices.getCarIntoDb(req === null || req === void 0 ? void 0 : req.query);
     (0, sendResponse_1.default)(res, {
         data: result,
         success: true,
@@ -79,6 +79,24 @@ const returnCar = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void
         message: "Car returned  successfully",
     });
 }));
+const manageCars = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield car_service_1.carServices.manageCar();
+    (0, sendResponse_1.default)(res, {
+        data: result,
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Cars retrieved that need to be managed!",
+    });
+}));
+const manageCarsStatusAbailable = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield car_service_1.carServices.carBack(req.params.id);
+    (0, sendResponse_1.default)(res, {
+        data: result,
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "This car is abailable right now!",
+    });
+}));
 exports.carController = {
     createCar,
     getCar,
@@ -86,4 +104,6 @@ exports.carController = {
     updateCar,
     deleteCar,
     returnCar,
+    manageCars,
+    manageCarsStatusAbailable,
 };

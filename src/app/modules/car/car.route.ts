@@ -22,10 +22,22 @@ route.patch(
   auth(userRole.admin),
   carController.updateCar
 );
-route.put("/return", auth(userRole.admin), carController.returnCar);
+route.put(
+  "/return",
+  auth(userRole.admin, userRole.user),
+  carController.returnCar
+);
 route.delete("/:id", auth(userRole.admin), carController.deleteCar);
 
+route.put(
+  "/car-back/:id",
+  auth(userRole.admin),
+  carController.manageCarsStatusAbailable
+);
+
 route.get("/", carController.getCar);
-route.get("/:id", carController.getSingleCar);
+route.get("/cars/:id", carController.getSingleCar);
+
+route.get("/manage-cars", carController.manageCars);
 
 export const carRoute = route;

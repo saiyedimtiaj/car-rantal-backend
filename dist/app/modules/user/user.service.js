@@ -32,6 +32,10 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const createUserIntoDb = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const { password } = payload, userinfo = __rest(payload, ["password"]);
+    const isExistUser = yield user_modal_1.Users.findOne({ email: payload.email });
+    if (isExistUser) {
+        throw new AppError_1.AppError(http_status_1.default.BAD_REQUEST, "User already exist!");
+    }
     const hashedPassword = yield bcrypt_1.default.hash(password, config_1.default.bcrypt_salt_round);
     const result = yield user_modal_1.Users.create(Object.assign({ password: hashedPassword }, userinfo));
     return result;
@@ -49,12 +53,66 @@ const loginUserIntoDb = (payload) => __awaiter(void 0, void 0, void 0, function*
         email: isUserExist.email,
         role: isUserExist.role,
     };
-    const token = jsonwebtoken_1.default.sign(data, config_1.default.jwt_access_secret, {
+    const accessToken = jsonwebtoken_1.default.sign(data, config_1.default.jwt_access_secret, {
         expiresIn: config_1.default.jwt_secret_expirein,
     });
-    return { data: isUserExist, token };
+    const refreshToken = jsonwebtoken_1.default.sign(data, config_1.default.jwt_refresh_secret, {
+        expiresIn: config_1.default.jwt_refresh_expires_in,
+    });
+    return { data: isUserExist, accessToken, refreshToken };
+});
+const refreshToken = (token) => __awaiter(void 0, void 0, void 0, function* () {
+    const decoded = jsonwebtoken_1.default.verify(token, config_1.default.jwt_refresh_secret);
+    const { email, role } = decoded;
+    const isExistUser = yield user_modal_1.Users.findOne({ email: email });
+    if (!isExistUser) {
+        throw new AppError_1.AppError(http_status_1.default.NOT_FOUND, "User does not exist!");
+    }
+    const jwtPayload = { email, role };
+    const accessToken = jsonwebtoken_1.default.sign(jwtPayload, config_1.default.jwt_access_secret, {
+        expiresIn: config_1.default.jwt_secret_expirein,
+    });
+    return accessToken;
+});
+const getAllUsers = () => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_modal_1.Users.find();
+    return result;
+});
+const updateUserRole = (id, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_modal_1.Users.findByIdAndUpdate(id, {
+        role: payload.role,
+    }, {
+        new: true,
+        runValidators: true,
+    });
+    return result;
+});
+const getCurrentUser = (email) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_modal_1.Users.findOne({ email: email });
+    return result;
+});
+const updateProfile = (email, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const isUserExist = yield user_modal_1.Users.findOne({ email: email });
+    if (!isUserExist) {
+        throw new AppError_1.AppError(http_status_1.default.NOT_FOUND, "User does not exist!");
+    }
+    const result = yield user_modal_1.Users.findByIdAndUpdate(isUserExist === null || isUserExist === void 0 ? void 0 : isUserExist._id, {
+        name: payload.name,
+        phone: payload.phone,
+        address: payload.address,
+        image: payload.image,
+    }, {
+        new: true,
+        runValidators: true,
+    });
+    return result;
 });
 exports.userServices = {
     createUserIntoDb,
     loginUserIntoDb,
+    refreshToken,
+    getAllUsers,
+    updateUserRole,
+    getCurrentUser,
+    updateProfile,
 };

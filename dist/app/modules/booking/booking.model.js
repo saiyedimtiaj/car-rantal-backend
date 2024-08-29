@@ -9,6 +9,10 @@ const bookingSchema = new mongoose_1.Schema({
     user: { type: mongoose_1.Schema.Types.ObjectId, ref: "Users", required: true },
     car: { type: mongoose_1.Schema.Types.ObjectId, required: true, ref: "Car" },
     totalCost: { type: Number, default: 0 },
+    passport: { type: String, required: true },
+    license: { type: String, required: true },
+    address: { type: String, required: true },
+    status: { type: String, required: true, default: "panding" },
 }, {
     timestamps: true,
 });

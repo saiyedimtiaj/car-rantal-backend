@@ -1,18 +1,44 @@
 import httpStatus from "http-status";
 import { AppError } from "../../error/AppError";
 import { Bookings } from "../booking/booking.model";
-import { TCar, TCarReturn } from "./car.interface";
+import { TCar, TCarQueryParams, TCarReturn } from "./car.interface";
 import { Car } from "./car.modal";
 import mongoose from "mongoose";
-import { Users } from "../user/user.modal";
+import { initiatePayment } from "../../utils/payment";
 
 const craeteCarIntoDb = async (payload: TCar) => {
   const result = await Car.create(payload);
   return result;
 };
 
-const getCarIntoDb = async () => {
-  const result = await Car.find();
+const getCarIntoDb = async (queryParams: TCarQueryParams) => {
+  const { category, color, searchTrams, location, startDate } = queryParams;
+  const query: any = {};
+  if (category) {
+    query.category = category;
+  }
+  if (color) {
+    query.color = color;
+  }
+
+  if (searchTrams) {
+    query.$or = [
+      { name: { $regex: searchTrams, $options: "i" } },
+      { description: { $regex: searchTrams, $options: "i" } },
+    ];
+  }
+
+  if (location) {
+    query.location = location;
+  }
+
+  if (startDate) {
+    const notAvailableCars = await Bookings.find({ date: startDate });
+    const bookedCarIds = notAvailableCars.map((car) => car.car);
+    query._id = { $nin: bookedCarIds };
+  }
+
+  const result = await Car.find(query);
   return result;
 };
 
@@ -42,60 +68,33 @@ const deleteCarIntodb = async (id: string) => {
 };
 
 const carReturnFromdb = async (payload: TCarReturn) => {
-  const isBookingExist = await Bookings.findById(payload.bookingId);
-  if (!isBookingExist) {
-    throw new AppError(httpStatus.NOT_FOUND, "Booking not Exist!");
-  }
+  const paymentData = {
+    id: `TXN-${Date.now()}`,
+    amount: 500,
+    name: "Saiyed",
+    email: "saiyed@gmail.com",
+    bookingId: payload.bookingId,
+    endTime: payload.endTime,
+  };
+  const paymentSession = await initiatePayment(paymentData);
+  return paymentSession;
+};
 
-  const bookingCar = await Car.findById(isBookingExist.car);
-  if (!bookingCar) {
-    throw new AppError(httpStatus.NOT_FOUND, "Car not Exist!");
-  }
+const manageCar = async () => {
+  const result = await Car.find({ status: { $ne: "available" } });
+  return result;
+};
 
-  const startTime = new Date(`1970-01-01T${isBookingExist.startTime}:00Z`);
-  const endTime = new Date(`1970-01-01T${payload.endTime}:00Z`);
-
-  if (endTime < startTime) {
-    throw new AppError(httpStatus.NOT_ACCEPTABLE, "This time is not valid!");
-  }
-
-  let diff = (endTime.getTime() - startTime.getTime()) / 1000;
-  diff /= 60 * 60;
-
-  const session = await mongoose.startSession();
-  try {
-    session.startTransaction();
-    const carStatusChange = await Car.findByIdAndUpdate(
-      bookingCar._id,
-      { status: "available" },
-      {
-        new: true,
-        session: session,
-      }
-    );
-
-    const result = await Bookings.findByIdAndUpdate(
-      payload.bookingId,
-      {
-        endTime: payload.endTime,
-        totalCost: diff * (bookingCar.pricePerHour as number),
-      },
-      {
-        new: true,
-        runValidators: true,
-        session: session,
-      }
-    )
-      .populate("user")
-      .populate("car");
-    await session.commitTransaction();
-    await session.endSession();
-    return result;
-  } catch (err: any) {
-    await session.abortTransaction();
-    await session.endSession();
-    throw new Error(err);
-  }
+const carBack = async (id: string) => {
+  const result = await Car.findByIdAndUpdate(
+    id,
+    { status: "available" },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+  return result;
 };
 
 export const carServices = {
@@ -105,4 +104,6 @@ export const carServices = {
   updateCarFromDb,
   deleteCarIntodb,
   carReturnFromdb,
+  manageCar,
+  carBack,
 };

@@ -15,7 +15,7 @@ const createBookingIntoDb = async (payload: TCarBooking, userEmail: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "Car does not exist!");
   }
 
-  if (isCarExist.status === "unavailable") {
+  if (isCarExist.status !== "available") {
     throw new AppError(
       httpStatus.BAD_REQUEST,
       "Car is not available at this time!!"
@@ -44,47 +44,32 @@ const createBookingIntoDb = async (payload: TCarBooking, userEmail: string) => {
   }
 
   const user = await Users.findOne({ email: userEmail });
+  const findBooking = await Bookings.findOne({ date: payload.date }).sort({
+    date: -1,
+  });
 
-  const session = await mongoose.startSession();
-
-  try {
-    session.startTransaction();
-
-    const carStatusUpdate = await Car.findByIdAndUpdate(
-      carId,
-      { status: "unavailable" },
-      {
-        new: true,
-        session,
-      }
-    );
-    const result = await Bookings.create(
-      [
-        {
-          car: carStatusUpdate,
-          ...others,
-          user: user,
-        },
-      ],
-      { session }
-    );
-
-    await session.commitTransaction();
-    await session.endSession();
-
-    return result;
-  } catch (err: any) {
-    await session.abortTransaction();
-    await session.endSession();
-    throw new Error(err);
+  if (payload.date === findBooking?.date) {
+    if (user?.email === userEmail) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "You already booked at this date!"
+      );
+    }
   }
+
+  const result = await Bookings.create({
+    car: carId,
+    ...others,
+    user: user,
+  });
+
+  return result;
 };
 
 const getBookingFromDb = async (req: Request) => {
   const queryObj: TQuery = {};
 
   if (req.query.carId) {
-    console.log(req.query.carId);
     queryObj["car"] = new Types.ObjectId(req.query.carId as string);
   }
 
@@ -92,7 +77,10 @@ const getBookingFromDb = async (req: Request) => {
     queryObj.date = req.query.date as string;
   }
 
-  const result = await Bookings.find(queryObj).populate("user").populate("car");
+  const result = await Bookings.find(queryObj)
+    .populate("user")
+    .populate("car")
+    .sort({ createdAt: "desc" });
 
   return result;
 };
@@ -101,7 +89,89 @@ const getMyBookingFromDb = async (email: string) => {
   const user = await Users.findOne({ email });
   const result = await Bookings.find({ user: new Types.ObjectId(user?._id) })
     .populate("user")
-    .populate("car");
+    .populate("car")
+    .sort({ createdAt: "desc" });
+  return result;
+};
+
+const approveBooking = async (id: string) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const isBookingExist = await Bookings.findById(id).session(session);
+
+    if (!isBookingExist) {
+      throw new AppError(httpStatus.NOT_FOUND, "Booking not found!");
+    }
+
+    if (isBookingExist.status !== "panding") {
+      throw new AppError(httpStatus.BAD_REQUEST, "Already Booking changed!");
+    }
+
+    const isCarExist = await Car.findById(isBookingExist.car).session(session);
+
+    if (!isCarExist) {
+      throw new AppError(httpStatus.NOT_FOUND, "Car not found!");
+    }
+
+    const car = await Car.findByIdAndUpdate(
+      isCarExist._id,
+      { status: "unavailable" },
+      { new: true, session }
+    );
+
+    const bookingUpdate = await Bookings.findByIdAndUpdate(
+      id,
+      { status: "approve" },
+      { new: true, session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return { car, bookingUpdate };
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
+const rejectBooking = async (id: string) => {
+  const isBookingExist = await Bookings.findById(id);
+
+  if (!isBookingExist) {
+    throw new AppError(httpStatus.NOT_FOUND, "Booking not found!");
+  }
+
+  if (isBookingExist.status !== "panding") {
+    throw new AppError(httpStatus.BAD_REQUEST, "Already Booking changed!");
+  }
+
+  const isCarExist = await Car.findById(isBookingExist.car);
+
+  if (!isCarExist) {
+    throw new AppError(httpStatus.NOT_FOUND, "Car not found!");
+  }
+
+  const bookingUpdate = await Bookings.findByIdAndUpdate(
+    id,
+    { status: "reject" },
+    { new: true }
+  );
+
+  return bookingUpdate;
+};
+
+const updateBooking = async (id: string, payload: Partial<TBooking>) => {
+  const isBookingExist = await Bookings.findById(id);
+
+  if (!isBookingExist) {
+    throw new AppError(httpStatus.NOT_FOUND, "Booking not found!");
+  }
+
+  const result = await Bookings.findByIdAndUpdate(id, payload, { new: true });
   return result;
 };
 
@@ -109,4 +179,7 @@ export const bookingService = {
   createBookingIntoDb,
   getBookingFromDb,
   getMyBookingFromDb,
+  approveBooking,
+  rejectBooking,
+  updateBooking,
 };

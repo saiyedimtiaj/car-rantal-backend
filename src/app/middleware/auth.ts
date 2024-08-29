@@ -8,26 +8,30 @@ export interface CustomRequest extends Request {
   token: string | JwtPayload;
 }
 
-const auth = (requiredRole?: string) => {
+const auth = (...requiredRoles: string[]) => {
   return catchAsync(async (req, res, next) => {
     const token = req.header("Authorization")?.replace("Bearer ", "");
+
     if (!token) {
       throw new AppError(
         httpStatus.UNAUTHORIZED,
         "You have no access to this route"
       );
     }
-    const decoded = jwt.verify(token, config.jwt_access_secret as string);
-    const { role } = decoded as JwtPayload;
+    const decoded = jwt.verify(
+      token,
+      config.jwt_access_secret as string
+    ) as JwtPayload;
+    const { role } = decoded;
 
-    if (requiredRole && requiredRole !== role) {
+    if (requiredRoles.length > 0 && !requiredRoles.includes(role)) {
       throw new AppError(
-        httpStatus.UNAUTHORIZED,
-        "You have no access to this route"
+        httpStatus.FORBIDDEN,
+        "You do not have the required role to access this route"
       );
     }
 
-    req.user = decoded as JwtPayload;
+    req.user = decoded;
     next();
   });
 };

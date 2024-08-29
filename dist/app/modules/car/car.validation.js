@@ -7,9 +7,14 @@ exports.createCarValidationSchema = zod_1.z.object({
         name: zod_1.z.string(),
         description: zod_1.z.string(),
         color: zod_1.z.string(),
-        isElectric: zod_1.z.boolean(),
         features: zod_1.z.array(zod_1.z.string()),
         pricePerHour: zod_1.z.number(),
+        image: zod_1.z.string(),
+        location: zod_1.z.string(),
+        category: zod_1.z.string(),
+        doors: zod_1.z.number(),
+        passenger: zod_1.z.number(),
+        luggage: zod_1.z.number(),
         status: zod_1.z.string().default("available"),
         isDeleted: zod_1.z.boolean().default(false),
     }),
@@ -19,11 +24,15 @@ exports.updateCarValidationSchema = zod_1.z.object({
         name: zod_1.z.string().optional(),
         description: zod_1.z.string().optional(),
         color: zod_1.z.string().optional(),
-        isElectric: zod_1.z.boolean().optional(),
         features: zod_1.z.array(zod_1.z.string()).optional(),
         pricePerHour: zod_1.z.number().optional(),
-        status: zod_1.z.enum(["available", "available"]).default("available").optional(),
+        status: zod_1.z
+            .enum(["available", "unavailable"])
+            .default("available")
+            .optional(),
         isDeleted: zod_1.z.boolean().default(false).optional(),
+        location: zod_1.z.string().optional(),
+        category: zod_1.z.string().optional(),
     }),
 });
 exports.returnCarValidationSchema = zod_1.z.object({

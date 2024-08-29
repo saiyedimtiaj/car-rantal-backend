@@ -2,8 +2,6 @@ import httpStatus from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { bookingService } from "./booking.service";
-import { TQuery } from "./booking.interface";
-import { Model, Types } from "mongoose";
 
 const createBooking = catchAsync(async (req, res) => {
   const { email } = req.user;
@@ -37,8 +35,44 @@ const getMyBooking = catchAsync(async (req, res) => {
   });
 });
 
+const bookingApprove = catchAsync(async (req, res) => {
+  const id = req.params.id;
+  const result = await bookingService.approveBooking(id);
+  sendResponse(res, {
+    data: result,
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Booking Approve successfully",
+  });
+});
+
+const bookingReject = catchAsync(async (req, res) => {
+  const id = req.params.id;
+  const result = await bookingService.rejectBooking(id);
+  sendResponse(res, {
+    data: result,
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Booking is Rejected",
+  });
+});
+
+const updateBooking = catchAsync(async (req, res) => {
+  const id = req.params.id;
+  const result = await bookingService.updateBooking(id, req.body);
+  sendResponse(res, {
+    data: result,
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Booking date and time modified!",
+  });
+});
+
 export const bookingController = {
   createBooking,
   getAllBooking,
   getMyBooking,
+  bookingApprove,
+  bookingReject,
+  updateBooking,
 };

@@ -6,10 +6,13 @@ import noRouteFound from "./app/middleware/noRouteFound";
 const app: Application = express();
 import cookieParser from "cookie-parser";
 
+// https://metroride-imtiajs-projects.vercel.app/
+// http://localhost:5173
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: ["https://metroride-imtiajs-projects.vercel.app"],
+    credentials: true,
   })
 );
 app.use(cookieParser());

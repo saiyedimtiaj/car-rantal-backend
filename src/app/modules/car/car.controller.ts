@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { carServices } from "./car.service";
+import { Car } from "./car.modal";
 
 const createCar = catchAsync(async (req, res) => {
   const result = await carServices.craeteCarIntoDb(req.body);
@@ -14,7 +15,7 @@ const createCar = catchAsync(async (req, res) => {
 });
 
 const getCar = catchAsync(async (req, res) => {
-  const result = await carServices.getCarIntoDb();
+  const result = await carServices.getCarIntoDb(req?.query);
   sendResponse(res, {
     data: result,
     success: true,
@@ -71,6 +72,26 @@ const returnCar = catchAsync(async (req, res) => {
   });
 });
 
+const manageCars = catchAsync(async (req, res) => {
+  const result = await carServices.manageCar();
+  sendResponse(res, {
+    data: result,
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Cars retrieved that need to be managed!",
+  });
+});
+
+const manageCarsStatusAbailable = catchAsync(async (req, res) => {
+  const result = await carServices.carBack(req.params.id);
+  sendResponse(res, {
+    data: result,
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "This car is abailable right now!",
+  });
+});
+
 export const carController = {
   createCar,
   getCar,
@@ -78,4 +99,6 @@ export const carController = {
   updateCar,
   deleteCar,
   returnCar,
+  manageCars,
+  manageCarsStatusAbailable,
 };

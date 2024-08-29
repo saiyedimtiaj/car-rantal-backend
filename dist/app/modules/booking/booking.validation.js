@@ -23,5 +23,9 @@ exports.createBookingValidationSchema = zod_1.z.object({
         user: zod_1.z.string().optional(),
         carId: zod_1.z.string(),
         totalCost: zod_1.z.number().default(0).optional(),
+        passport: zod_1.z.string().optional(),
+        license: zod_1.z.string().optional(),
+        address: zod_1.z.string().optional(),
+        status: zod_1.z.string().default("panding"),
     }),
 });

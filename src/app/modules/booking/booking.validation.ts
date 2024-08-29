@@ -22,5 +22,9 @@ export const createBookingValidationSchema = z.object({
     user: z.string().optional(),
     carId: z.string(),
     totalCost: z.number().default(0).optional(),
+    passport: z.string().optional(),
+    license: z.string().optional(),
+    address: z.string().optional(),
+    status: z.string().default("panding"),
   }),
 });

@@ -17,7 +17,7 @@ const http_status_1 = __importDefault(require("http-status"));
 const AppError_1 = require("../error/AppError");
 const catchAsync_1 = __importDefault(require("../utils/catchAsync"));
 const config_1 = __importDefault(require("../config"));
-const auth = (requiredRole) => {
+const auth = (...requiredRoles) => {
     return (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
         var _a;
         const token = (_a = req.header("Authorization")) === null || _a === void 0 ? void 0 : _a.replace("Bearer ", "");
@@ -26,8 +26,8 @@ const auth = (requiredRole) => {
         }
         const decoded = jsonwebtoken_1.default.verify(token, config_1.default.jwt_access_secret);
         const { role } = decoded;
-        if (requiredRole && requiredRole !== role) {
-            throw new AppError_1.AppError(http_status_1.default.UNAUTHORIZED, "You have no access to this route");
+        if (requiredRoles.length > 0 && !requiredRoles.includes(role)) {
+            throw new AppError_1.AppError(http_status_1.default.FORBIDDEN, "You do not have the required role to access this route");
         }
         req.user = decoded;
         next();

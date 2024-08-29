@@ -7,6 +7,10 @@ export type TBooking = {
   user: Types.ObjectId;
   car: Types.ObjectId;
   totalCost: number;
+  passport: string;
+  license: string;
+  address: string;
+  status: string;
 };
 
 export type TCarBooking = {

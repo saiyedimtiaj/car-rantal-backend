@@ -11,7 +11,10 @@ const validateRequest_1 = __importDefault(require("../../middleware/validateRequ
 const booking_validation_1 = require("./booking.validation");
 const booking_controller_1 = require("./booking.controller");
 const route = (0, express_1.Router)();
-route.post("/", (0, auth_1.default)(user_constant_1.userRole.user), (0, validateRequest_1.default)(booking_validation_1.createBookingValidationSchema), booking_controller_1.bookingController.createBooking);
+route.post("/", (0, auth_1.default)(user_constant_1.userRole.user, user_constant_1.userRole.admin), (0, validateRequest_1.default)(booking_validation_1.createBookingValidationSchema), booking_controller_1.bookingController.createBooking);
 route.get("/", (0, auth_1.default)(user_constant_1.userRole.admin), booking_controller_1.bookingController.getAllBooking);
-route.get("/my-bookings", (0, auth_1.default)(user_constant_1.userRole.user), booking_controller_1.bookingController.getMyBooking);
+route.get("/my-bookings", (0, auth_1.default)(user_constant_1.userRole.user, user_constant_1.userRole.admin), booking_controller_1.bookingController.getMyBooking);
+route.patch("/booking-approve/:id", (0, auth_1.default)(user_constant_1.userRole.admin), booking_controller_1.bookingController.bookingApprove);
+route.patch("/booking-reject/:id", (0, auth_1.default)(user_constant_1.userRole.user, user_constant_1.userRole.admin), booking_controller_1.bookingController.bookingReject);
+route.put("/update/:id", (0, auth_1.default)(user_constant_1.userRole.user, user_constant_1.userRole.admin), booking_controller_1.bookingController.updateBooking);
 exports.bookingRouter = route;

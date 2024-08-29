@@ -8,22 +8,39 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.carServices = void 0;
-const http_status_1 = __importDefault(require("http-status"));
-const AppError_1 = require("../../error/AppError");
 const booking_model_1 = require("../booking/booking.model");
 const car_modal_1 = require("./car.modal");
-const mongoose_1 = __importDefault(require("mongoose"));
+const payment_1 = require("../../utils/payment");
 const craeteCarIntoDb = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield car_modal_1.Car.create(payload);
     return result;
 });
-const getCarIntoDb = () => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield car_modal_1.Car.find();
+const getCarIntoDb = (queryParams) => __awaiter(void 0, void 0, void 0, function* () {
+    const { category, color, searchTrams, location, startDate } = queryParams;
+    const query = {};
+    if (category) {
+        query.category = category;
+    }
+    if (color) {
+        query.color = color;
+    }
+    if (searchTrams) {
+        query.$or = [
+            { name: { $regex: searchTrams, $options: "i" } },
+            { description: { $regex: searchTrams, $options: "i" } },
+        ];
+    }
+    if (location) {
+        query.location = location;
+    }
+    if (startDate) {
+        const notAvailableCars = yield booking_model_1.Bookings.find({ date: startDate });
+        const bookedCarIds = notAvailableCars.map((car) => car.car);
+        query._id = { $nin: bookedCarIds };
+    }
+    const result = yield car_modal_1.Car.find(query);
     return result;
 });
 const getSingleCarIntoDb = (id) => __awaiter(void 0, void 0, void 0, function* () {
@@ -45,47 +62,27 @@ const deleteCarIntodb = (id) => __awaiter(void 0, void 0, void 0, function* () {
     return result;
 });
 const carReturnFromdb = (payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const isBookingExist = yield booking_model_1.Bookings.findById(payload.bookingId);
-    if (!isBookingExist) {
-        throw new AppError_1.AppError(http_status_1.default.NOT_FOUND, "Booking not Exist!");
-    }
-    const bookingCar = yield car_modal_1.Car.findById(isBookingExist.car);
-    if (!bookingCar) {
-        throw new AppError_1.AppError(http_status_1.default.NOT_FOUND, "Car not Exist!");
-    }
-    const startTime = new Date(`1970-01-01T${isBookingExist.startTime}:00Z`);
-    const endTime = new Date(`1970-01-01T${payload.endTime}:00Z`);
-    if (endTime < startTime) {
-        throw new AppError_1.AppError(http_status_1.default.NOT_ACCEPTABLE, "This time is not valid!");
-    }
-    let diff = (endTime.getTime() - startTime.getTime()) / 1000;
-    diff /= 60 * 60;
-    const session = yield mongoose_1.default.startSession();
-    try {
-        session.startTransaction();
-        const carStatusChange = yield car_modal_1.Car.findByIdAndUpdate(bookingCar._id, { status: "available" }, {
-            new: true,
-            session: session,
-        });
-        const result = yield booking_model_1.Bookings.findByIdAndUpdate(payload.bookingId, {
-            endTime: payload.endTime,
-            totalCost: diff * bookingCar.pricePerHour,
-        }, {
-            new: true,
-            runValidators: true,
-            session: session,
-        })
-            .populate("user")
-            .populate("car");
-        yield session.commitTransaction();
-        yield session.endSession();
-        return result;
-    }
-    catch (err) {
-        yield session.abortTransaction();
-        yield session.endSession();
-        throw new Error(err);
-    }
+    const paymentData = {
+        id: `TXN-${Date.now()}`,
+        amount: 500,
+        name: "Saiyed",
+        email: "saiyed@gmail.com",
+        bookingId: payload.bookingId,
+        endTime: payload.endTime,
+    };
+    const paymentSession = yield (0, payment_1.initiatePayment)(paymentData);
+    return paymentSession;
+});
+const manageCar = () => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield car_modal_1.Car.find({ status: { $ne: "available" } });
+    return result;
+});
+const carBack = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield car_modal_1.Car.findByIdAndUpdate(id, { status: "available" }, {
+        new: true,
+        runValidators: true,
+    });
+    return result;
 });
 exports.carServices = {
     craeteCarIntoDb,
@@ -94,4 +91,6 @@ exports.carServices = {
     updateCarFromDb,
     deleteCarIntodb,
     carReturnFromdb,
+    manageCar,
+    carBack,
 };

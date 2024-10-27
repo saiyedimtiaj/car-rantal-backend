@@ -10,11 +10,11 @@ const globalErrorHandeller_1 = __importDefault(require("./app/middleware/globalE
 const noRouteFound_1 = __importDefault(require("./app/middleware/noRouteFound"));
 const app = (0, express_1.default)();
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
-// https://metroride-imtiajs-projects.vercel.app/
+// https://metroride-imtiajs-projects.vercel.app
 // http://localhost:5173
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
-    origin: ["https://metroride-imtiajs-projects.vercel.app"],
+    origin: ["https://car-rantal-fbe8.vercel.app", "http://localhost:5173"],
     credentials: true,
 }));
 app.use((0, cookie_parser_1.default)());

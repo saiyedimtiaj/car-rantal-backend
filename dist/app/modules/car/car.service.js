@@ -18,7 +18,7 @@ const craeteCarIntoDb = (payload) => __awaiter(void 0, void 0, void 0, function*
     return result;
 });
 const getCarIntoDb = (queryParams) => __awaiter(void 0, void 0, void 0, function* () {
-    const { category, color, searchTrams, location, startDate } = queryParams;
+    const { category, color, searchTrams, location, date } = queryParams;
     const query = {};
     if (category) {
         query.category = category;
@@ -35,8 +35,8 @@ const getCarIntoDb = (queryParams) => __awaiter(void 0, void 0, void 0, function
     if (location) {
         query.location = location;
     }
-    if (startDate) {
-        const notAvailableCars = yield booking_model_1.Bookings.find({ date: startDate });
+    if (date) {
+        const notAvailableCars = yield booking_model_1.Bookings.find({ date: date });
         const bookedCarIds = notAvailableCars.map((car) => car.car);
         query._id = { $nin: bookedCarIds };
     }
@@ -55,10 +55,7 @@ const updateCarFromDb = (id, payload) => __awaiter(void 0, void 0, void 0, funct
     return result;
 });
 const deleteCarIntodb = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield car_modal_1.Car.findByIdAndUpdate(id, { isDeleted: true }, {
-        new: true,
-        runValidators: true,
-    });
+    const result = yield car_modal_1.Car.findByIdAndDelete(id);
     return result;
 });
 const carReturnFromdb = (payload) => __awaiter(void 0, void 0, void 0, function* () {

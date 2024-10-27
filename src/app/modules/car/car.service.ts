@@ -12,7 +12,7 @@ const craeteCarIntoDb = async (payload: TCar) => {
 };
 
 const getCarIntoDb = async (queryParams: TCarQueryParams) => {
-  const { category, color, searchTrams, location, startDate } = queryParams;
+  const { category, color, searchTrams, location, date } = queryParams;
   const query: any = {};
   if (category) {
     query.category = category;
@@ -32,8 +32,8 @@ const getCarIntoDb = async (queryParams: TCarQueryParams) => {
     query.location = location;
   }
 
-  if (startDate) {
-    const notAvailableCars = await Bookings.find({ date: startDate });
+  if (date) {
+    const notAvailableCars = await Bookings.find({ date: date });
     const bookedCarIds = notAvailableCars.map((car) => car.car);
     query._id = { $nin: bookedCarIds };
   }
@@ -56,14 +56,7 @@ const updateCarFromDb = async (id: string, payload: Partial<TCar>) => {
 };
 
 const deleteCarIntodb = async (id: string) => {
-  const result = await Car.findByIdAndUpdate(
-    id,
-    { isDeleted: true },
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
+  const result = await Car.findByIdAndDelete(id);
   return result;
 };
 

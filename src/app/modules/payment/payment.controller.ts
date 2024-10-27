@@ -70,7 +70,7 @@ export const confirmationController = catchAsync(async (req, res) => {
         <div class="container">
           <h1>Payment Already Processed</h1>
           <p>Your payment for this booking has already been successfully processed.</p>
-          <a href="/" class="button">Go to Home</a>
+          <a href="https://car-rantal-fbe8.vercel.app/" class="button">Go to Home</a>
         </div>
       </body>
       </html>
@@ -174,7 +174,7 @@ export const confirmationController = catchAsync(async (req, res) => {
         <div class="container">
           <h1>Payment Successful!</h1>
           <p>Your payment was processed successfully. Thank you for your booking.</p>
-          <a href="http://localhost:5173" class="button">Go to Home</a>
+          <a href="https://car-rantal-fbe8.vercel.app/" class="button">Go to Home</a>
         </div>
       </body>
       </html>
@@ -186,3 +186,88 @@ export const confirmationController = catchAsync(async (req, res) => {
     throw new Error(err);
   }
 });
+
+export const paymentFailedConfirmationController = catchAsync(
+  async (req, res) => {
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Payment Failed</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: Arial, sans-serif;
+                background-color: #000;
+                color: #fff;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+            .container {
+                text-align: center;
+                max-width: 400px;
+                padding: 20px;
+                border: 2px solid #fff;
+                border-radius: 8px;
+                background-color: #333;
+            }
+            .icon-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 20px;
+            }
+            .icon {
+                font-size: 50px;
+                color: #ff4c4c;
+            }
+            h1 {
+                font-size: 28px;
+                margin-bottom: 20px;
+                color: #fff;
+            }
+            p {
+                margin: 10px 0;
+                color: #ccc;
+            }
+            .button {
+                display: inline-block;
+                margin-top: 20px;
+                padding: 10px 20px;
+                font-size: 16px;
+                color: #000;
+                background-color: #fff;
+                text-decoration: none;
+                border-radius: 5px;
+                transition: background-color 0.3s, color 0.3s;
+            }
+            .button:hover {
+                background-color: #444;
+                color: #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="icon-container">
+                <div class="icon">
+                    <span>&#10060;</span>
+                </div>
+            </div>
+            <h1>Payment Failed</h1>
+            <p>Unfortunately, your payment could not be processed.</p>
+            <p>Please try again or contact support if the issue persists.</p>
+            <a href="https://car-rantal-fbe8.vercel.app" class="button">Try Again</a>
+        </div>
+    </body>
+    </html>
+  `;
+
+    res.status(400).send(htmlContent);
+  }
+);

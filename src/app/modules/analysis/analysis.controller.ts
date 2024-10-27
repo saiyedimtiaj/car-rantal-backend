@@ -46,3 +46,97 @@ export const dashbaordAnalysis = catchAsync(async (req, res) => {
     message: "Dashboard data retrive successfully",
   });
 });
+
+export const dashbaordAnalysisForChart = catchAsync(async (req, res) => {
+  const today = new Date();
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(today.getMonth() - 6); // Set date to 6 months ago
+
+  // Aggregation to get bookings created in the last 6 months
+  const userBookingAnalytics = await Bookings.aggregate([
+    {
+      // Match bookings created in the last 6 months
+      $match: {
+        createdAt: { $gte: sixMonthsAgo, $lte: today }, // Filter bookings within the last 6 months
+      },
+    },
+    {
+      // Group bookings by month and year, and sum up the total cost
+      $group: {
+        _id: {
+          month: { $month: "$createdAt" },
+          year: { $year: "$createdAt" },
+        },
+        count: { $sum: 1 }, // Count the number of bookings per month
+        totalCost: { $sum: "$totalCost" }, // Sum up the total cost per month
+      },
+    },
+    {
+      // Sort by year and month in ascending order
+      $sort: { "_id.year": 1, "_id.month": 1 },
+    },
+  ]);
+
+  // Create an array for the last 6 months with zero counts and total costs
+  const last6Months = [];
+  for (let i = 0; i < 6; i++) {
+    const currentDate = new Date();
+    currentDate.setMonth(today.getMonth() - i); // Subtract by month intervals
+
+    const monthName = currentDate.toLocaleString("default", {
+      month: "long",
+    });
+
+    last6Months.push({
+      month: monthName,
+      count: 0,
+      totalCost: 0, // Default total cost
+      dateKey: `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}`,
+    });
+  }
+
+  // Map the aggregated results to the same month format
+  const formattedAnalytics = userBookingAnalytics.map((item) => {
+    const monthName = new Date(
+      item._id.year,
+      item._id.month - 1
+    ).toLocaleString("default", {
+      month: "long",
+    });
+
+    return {
+      month: monthName,
+      count: item.count,
+      totalCost: item.totalCost, // Include total cost for each month
+      dateKey: `${item._id.year}-${item._id.month}`,
+    };
+  });
+
+  // Merge the default 6-month array with the aggregated results
+  const mergedAnalytics = last6Months.map((month) => {
+    const foundMonth = formattedAnalytics.find(
+      (item) => item.dateKey === month.dateKey
+    );
+    return {
+      month: month.month,
+      totalCost: foundMonth ? foundMonth.totalCost.toFixed(2) : 0,
+    };
+  });
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Monthly analytics data retrieval successful!",
+    data: mergedAnalytics.reverse(),
+  });
+});
+
+export const recentBooking = catchAsync(async (req, res) => {
+  const result = await Bookings.find().sort({ createdAt: -1 });
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Monthly analytics data retrieval successful!",
+    data: result,
+  });
+});

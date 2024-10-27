@@ -26,5 +26,5 @@ export type TCarQueryParams = {
   searchTrams?: string;
   name?: string;
   location?: string;
-  startDate?: string;
+  date?: string;
 };

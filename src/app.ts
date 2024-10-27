@@ -6,12 +6,12 @@ import noRouteFound from "./app/middleware/noRouteFound";
 const app: Application = express();
 import cookieParser from "cookie-parser";
 
-// https://metroride-imtiajs-projects.vercel.app/
+// https://metroride-imtiajs-projects.vercel.app
 // http://localhost:5173
 app.use(express.json());
 app.use(
   cors({
-    origin: ["https://metroride-imtiajs-projects.vercel.app"],
+    origin: ["https://car-rantal-fbe8.vercel.app", "http://localhost:5173"],
     credentials: true,
   })
 );
